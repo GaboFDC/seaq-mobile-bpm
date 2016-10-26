@@ -1,0 +1,520 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- origin at X=0.0 Y=0.0 -->
+<bpmn2:definitions xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:bpmn2="http://www.omg.org/spec/BPMN/20100524/MODEL" xmlns:bpmndi="http://www.omg.org/spec/BPMN/20100524/DI" xmlns:dc="http://www.omg.org/spec/DD/20100524/DC" xmlns:di="http://www.omg.org/spec/DD/20100524/DI" xmlns:g="http://www.jboss.org/drools/flow/gpd" xmlns:java="http://www.java.com/javaTypes" xmlns:tns="http://www.jboss.org/drools" xmlns="http://www.jboss.org/drools" xsi:schemaLocation="http://www.omg.org/spec/BPMN/20100524/MODEL BPMN20.xsd http://www.jboss.org/drools drools.xsd http://www.bpsim.org/schemas/1.0 bpsim.xsd" id="Definition" exporter="org.eclipse.bpmn2.modeler.core" exporterVersion="1.1.5.Final-v20160314-1546-B1300" expressionLanguage="http://www.mvel.org/2.0" targetNamespace="http://www.jboss.org/drools" typeLanguage="http://www.java.com/javaTypes">
+  <bpmn2:itemDefinition id="ItemDefinition_3" isCollection="false" structureRef="Boolean"/>
+  <bpmn2:itemDefinition id="ItemDefinition_2" isCollection="false" structureRef="Integer"/>
+  <bpmn2:itemDefinition id="ItemDefinition_1" isCollection="false" structureRef="String"/>
+  <bpmn2:itemDefinition id="ItemDefinition_87" isCollection="false" structureRef="org.apache.commons.codec.binary.Base64"/>
+  <bpmn2:itemDefinition id="ItemDefinition_605" isCollection="false" structureRef="Object"/>
+  <bpmn2:itemDefinition id="ItemDefinition_4" isCollection="false" structureRef="java.lang.String"/>
+  <bpmn2:process id="seaq.ProcesoSolicitud" tns:packageName="seaq" tns:version="2.0" name="ProcesoSolicitud" isExecutable="true" processType="Private">
+    <bpmn2:extensionElements>
+      <tns:import name="org.apache.commons.codec.binary.Base64"/>
+    </bpmn2:extensionElements>
+    <bpmn2:property id="firstname" itemSubjectRef="ItemDefinition_1" name="firstname"/>
+    <bpmn2:property id="lastname" itemSubjectRef="ItemDefinition_1" name="lastname"/>
+    <bpmn2:property id="request" itemSubjectRef="ItemDefinition_1" name="request"/>
+    <bpmn2:property id="decision" itemSubjectRef="ItemDefinition_1" name="decision"/>
+    <bpmn2:property id="decisioncomment" itemSubjectRef="ItemDefinition_1" name="decisioncomment"/>
+    <bpmn2:property id="username" itemSubjectRef="ItemDefinition_1" name="username"/>
+    <bpmn2:startEvent id="StartEvent_1" name="StartProcess">
+      <bpmn2:extensionElements>
+        <tns:metaData name="elementname">
+          <tns:metaValue><![CDATA[StartProcess]]></tns:metaValue>
+        </tns:metaData>
+      </bpmn2:extensionElements>
+      <bpmn2:outgoing>StartEvent_1-ScriptTask_1</bpmn2:outgoing>
+    </bpmn2:startEvent>
+    <bpmn2:scriptTask id="ScriptTask_1" name="DebugIncoming" scriptFormat="http://www.java.com/java">
+      <bpmn2:extensionElements>
+        <tns:metaData name="elementname">
+          <tns:metaValue><![CDATA[DebugIncoming]]></tns:metaValue>
+        </tns:metaData>
+      </bpmn2:extensionElements>
+      <bpmn2:incoming>StartEvent_1-ScriptTask_1</bpmn2:incoming>
+      <bpmn2:outgoing>ScriptTask_1-ScriptTask_2</bpmn2:outgoing>
+      <bpmn2:script>System.out.println(&quot;SEAQ&quot;);
+System.out.println(&quot;Process instance with ID &quot; + kcontext.getProcessInstance().getId() + &quot; started.&quot;);
+System.out.println(&quot;firstname = &quot; + kcontext.getVariable(&quot;firstname&quot;));
+System.out.println(&quot;lastname = &quot; + kcontext.getVariable(&quot;lastname&quot;));
+System.out.println(&quot;request = &quot; + kcontext.getVariable(&quot;request&quot;));
+System.out.println(&quot;decision = &quot; + kcontext.getVariable(&quot;decision&quot;));
+System.out.println(&quot;decisioncomment = &quot; + kcontext.getVariable(&quot;decisioncomment&quot;));</bpmn2:script>
+    </bpmn2:scriptTask>
+    <bpmn2:scriptTask id="ScriptTask_2" name="Enviar Recivido" scriptFormat="http://www.java.com/java">
+      <bpmn2:extensionElements>
+        <tns:metaData name="elementname">
+          <tns:metaValue><![CDATA[Enviar Recivido]]></tns:metaValue>
+        </tns:metaData>
+      </bpmn2:extensionElements>
+      <bpmn2:incoming>ScriptTask_1-ScriptTask_2</bpmn2:incoming>
+      <bpmn2:outgoing>ScriptTask_2-UserTask_1</bpmn2:outgoing>
+      <bpmn2:script>System.out.println(&quot;Inicio PUSH recivido&quot;);
+String targetURL = &quot;https://seaq.openshift.feedhenry.com/api/v2/ag-push/rest/sender&quot;;
+String applicationId = &quot;5435083b-010f-4cb6-8b2a-63631c2647c4&quot;;
+String masterSecret = &quot;a0da461e-0f57-40ec-a522-0d8d8a574db6&quot;;
+byte[] bytesBasicAuthData = Base64.encodeBase64(new String(applicationId + &quot;:&quot; + masterSecret).getBytes());
+String basicAuthData = new String(bytesBasicAuthData);
+String pushMessage = &quot;{\&quot;message\&quot;: {\&quot;alert\&quot;: \&quot;Solicitud en proceso: ID 'SE-0&quot; + kcontext.getProcessInstance().getId() + &quot;'.\&quot;,\&quot;sound\&quot;: \&quot;default\&quot;}}&quot;;
+System.out.println(&quot;Auth: &quot;+basicAuthData);
+System.out.println(&quot;Mensaje a enviar: &quot;+pushMessage);
+
+HttpURLConnection connection = null;
+  try {
+    //Create connection
+    URL url = new URL(targetURL);
+    connection = (HttpURLConnection)url.openConnection();
+    connection.setRequestMethod(&quot;POST&quot;);
+    connection.setRequestProperty(&quot;Content-Type&quot;, &quot;application/json&quot;);
+    connection.setRequestProperty(&quot;Accept&quot;, &quot;application/json&quot;);
+    connection.setRequestProperty(&quot;Authorization&quot;, &quot;Basic &quot; + basicAuthData);
+    
+    connection.setUseCaches(false);
+    connection.setDoOutput(true);
+
+    //Send request
+    DataOutputStream wr = new DataOutputStream(connection.getOutputStream());
+    wr.writeBytes(pushMessage);
+    wr.close();
+
+    //Get Response  
+    InputStream is = connection.getInputStream();
+    BufferedReader rd = new BufferedReader(new InputStreamReader(is));
+    StringBuilder response = new StringBuilder(); // or StringBuffer if not Java 5+ 
+    String line;
+    while((line = rd.readLine()) != null) {
+      response.append(line);
+      response.append('\r');
+    }
+    rd.close();
+    System.out.println(&quot;PUSH response: &quot; + response.toString());
+  } catch (Exception e) {
+    e.printStackTrace();
+    System.out.println(&quot;PUSH ERROR&quot;);
+  } finally {
+    if(connection != null) {
+      connection.disconnect(); 
+    }
+  }</bpmn2:script>
+    </bpmn2:scriptTask>
+    <bpmn2:userTask id="UserTask_1" name="Procesar Solicitud">
+      <bpmn2:extensionElements>
+        <tns:metaData name="elementname">
+          <tns:metaValue><![CDATA[Procesar Solicitud]]></tns:metaValue>
+        </tns:metaData>
+      </bpmn2:extensionElements>
+      <bpmn2:incoming>ScriptTask_2-UserTask_1</bpmn2:incoming>
+      <bpmn2:outgoing>UserTask_1-ExclusiveGateway_1</bpmn2:outgoing>
+      <bpmn2:ioSpecification id="InputOutputSpecification_1">
+        <bpmn2:dataInput id="UserTask_1_requestInput" itemSubjectRef="ItemDefinition_1" name="request"/>
+        <bpmn2:dataInput id="UserTask_1_firstnameInput" itemSubjectRef="ItemDefinition_1" name="firstname"/>
+        <bpmn2:dataInput id="UserTask_1_decisionInput" itemSubjectRef="ItemDefinition_1" name="decision"/>
+        <bpmn2:dataInput id="UserTask_1_decisioncommentInput" itemSubjectRef="ItemDefinition_1" name="decisioncomment"/>
+        <bpmn2:dataInput id="UserTask_1_lastnameInput" itemSubjectRef="ItemDefinition_1" name="lastname"/>
+        <bpmn2:dataInput id="UserTask_1_usernameInput" itemSubjectRef="ItemDefinition_1" name="username"/>
+        <bpmn2:dataInput id="UserTask_1_TaskNameInput" name="TaskName"/>
+        <bpmn2:dataInput id="UserTask_1_PriorityInput" name="Priority"/>
+        <bpmn2:dataInput id="UserTask_1_SkippableInput" name="Skippable"/>
+        <bpmn2:dataOutput id="UserTask_1_requestOutput" itemSubjectRef="ItemDefinition_1" name="request"/>
+        <bpmn2:dataOutput id="UserTask_1_firstnameOutput" itemSubjectRef="ItemDefinition_1" name="firstname"/>
+        <bpmn2:dataOutput id="UserTask_1_decisionOutput" itemSubjectRef="ItemDefinition_1" name="decision"/>
+        <bpmn2:dataOutput id="UserTask_1_decisioncommentOutput" itemSubjectRef="ItemDefinition_1" name="decisioncomment"/>
+        <bpmn2:dataOutput id="UserTask_1_lastnameOutput" itemSubjectRef="ItemDefinition_1" name="lastname"/>
+        <bpmn2:dataOutput id="UserTask_1_usernameOutput" itemSubjectRef="ItemDefinition_1" name="username"/>
+        <bpmn2:inputSet id="InputSet_1">
+          <bpmn2:dataInputRefs>UserTask_1_requestInput</bpmn2:dataInputRefs>
+          <bpmn2:dataInputRefs>UserTask_1_firstnameInput</bpmn2:dataInputRefs>
+          <bpmn2:dataInputRefs>UserTask_1_decisionInput</bpmn2:dataInputRefs>
+          <bpmn2:dataInputRefs>UserTask_1_decisioncommentInput</bpmn2:dataInputRefs>
+          <bpmn2:dataInputRefs>UserTask_1_lastnameInput</bpmn2:dataInputRefs>
+          <bpmn2:dataInputRefs>UserTask_1_usernameInput</bpmn2:dataInputRefs>
+          <bpmn2:dataInputRefs>UserTask_1_TaskNameInput</bpmn2:dataInputRefs>
+          <bpmn2:dataInputRefs>UserTask_1_PriorityInput</bpmn2:dataInputRefs>
+          <bpmn2:dataInputRefs>UserTask_1_SkippableInput</bpmn2:dataInputRefs>
+        </bpmn2:inputSet>
+        <bpmn2:outputSet id="OutputSet_1">
+          <bpmn2:dataOutputRefs>UserTask_1_requestOutput</bpmn2:dataOutputRefs>
+          <bpmn2:dataOutputRefs>UserTask_1_firstnameOutput</bpmn2:dataOutputRefs>
+          <bpmn2:dataOutputRefs>UserTask_1_decisionOutput</bpmn2:dataOutputRefs>
+          <bpmn2:dataOutputRefs>UserTask_1_decisioncommentOutput</bpmn2:dataOutputRefs>
+          <bpmn2:dataOutputRefs>UserTask_1_lastnameOutput</bpmn2:dataOutputRefs>
+          <bpmn2:dataOutputRefs>UserTask_1_usernameOutput</bpmn2:dataOutputRefs>
+        </bpmn2:outputSet>
+      </bpmn2:ioSpecification>
+      <bpmn2:dataInputAssociation id="DataInputAssociation_1">
+        <bpmn2:sourceRef>request</bpmn2:sourceRef>
+        <bpmn2:targetRef>UserTask_1_requestInput</bpmn2:targetRef>
+      </bpmn2:dataInputAssociation>
+      <bpmn2:dataInputAssociation id="DataInputAssociation_2">
+        <bpmn2:sourceRef>firstname</bpmn2:sourceRef>
+        <bpmn2:targetRef>UserTask_1_firstnameInput</bpmn2:targetRef>
+      </bpmn2:dataInputAssociation>
+      <bpmn2:dataInputAssociation id="DataInputAssociation_3">
+        <bpmn2:sourceRef>decision</bpmn2:sourceRef>
+        <bpmn2:targetRef>UserTask_1_decisionInput</bpmn2:targetRef>
+      </bpmn2:dataInputAssociation>
+      <bpmn2:dataInputAssociation id="DataInputAssociation_4">
+        <bpmn2:sourceRef>decisioncomment</bpmn2:sourceRef>
+        <bpmn2:targetRef>UserTask_1_decisioncommentInput</bpmn2:targetRef>
+      </bpmn2:dataInputAssociation>
+      <bpmn2:dataInputAssociation id="DataInputAssociation_5">
+        <bpmn2:sourceRef>lastname</bpmn2:sourceRef>
+        <bpmn2:targetRef>UserTask_1_lastnameInput</bpmn2:targetRef>
+      </bpmn2:dataInputAssociation>
+      <bpmn2:dataInputAssociation id="DataInputAssociation_6">
+        <bpmn2:sourceRef>username</bpmn2:sourceRef>
+        <bpmn2:targetRef>UserTask_1_usernameInput</bpmn2:targetRef>
+      </bpmn2:dataInputAssociation>
+      <bpmn2:dataInputAssociation id="DataInputAssociation_7">
+        <bpmn2:targetRef>UserTask_1_TaskNameInput</bpmn2:targetRef>
+        <bpmn2:assignment id="Assignment_1">
+          <bpmn2:from xsi:type="bpmn2:tFormalExpression" id="FormalExpression_1">ProcesarSolicitud</bpmn2:from>
+          <bpmn2:to xsi:type="bpmn2:tFormalExpression" id="FormalExpression_2">UserTask_1_TaskNameInput</bpmn2:to>
+        </bpmn2:assignment>
+      </bpmn2:dataInputAssociation>
+      <bpmn2:dataInputAssociation id="DataInputAssociation_9">
+        <bpmn2:targetRef>UserTask_1_PriorityInput</bpmn2:targetRef>
+        <bpmn2:assignment id="Assignment_3">
+          <bpmn2:from xsi:type="bpmn2:tFormalExpression" id="FormalExpression_5">1</bpmn2:from>
+          <bpmn2:to xsi:type="bpmn2:tFormalExpression" id="FormalExpression_6">UserTask_1_PriorityInput</bpmn2:to>
+        </bpmn2:assignment>
+      </bpmn2:dataInputAssociation>
+      <bpmn2:dataInputAssociation id="DataInputAssociation_10">
+        <bpmn2:targetRef>UserTask_1_SkippableInput</bpmn2:targetRef>
+        <bpmn2:assignment id="Assignment_4">
+          <bpmn2:from xsi:type="bpmn2:tFormalExpression" id="FormalExpression_7">true</bpmn2:from>
+          <bpmn2:to xsi:type="bpmn2:tFormalExpression" id="FormalExpression_8">UserTask_1_SkippableInput</bpmn2:to>
+        </bpmn2:assignment>
+      </bpmn2:dataInputAssociation>
+      <bpmn2:dataOutputAssociation id="DataOutputAssociation_1">
+        <bpmn2:sourceRef>UserTask_1_requestOutput</bpmn2:sourceRef>
+        <bpmn2:targetRef>request</bpmn2:targetRef>
+      </bpmn2:dataOutputAssociation>
+      <bpmn2:dataOutputAssociation id="DataOutputAssociation_2">
+        <bpmn2:sourceRef>UserTask_1_firstnameOutput</bpmn2:sourceRef>
+        <bpmn2:targetRef>firstname</bpmn2:targetRef>
+      </bpmn2:dataOutputAssociation>
+      <bpmn2:dataOutputAssociation id="DataOutputAssociation_3">
+        <bpmn2:sourceRef>UserTask_1_decisionOutput</bpmn2:sourceRef>
+        <bpmn2:targetRef>decision</bpmn2:targetRef>
+      </bpmn2:dataOutputAssociation>
+      <bpmn2:dataOutputAssociation id="DataOutputAssociation_4">
+        <bpmn2:sourceRef>UserTask_1_decisioncommentOutput</bpmn2:sourceRef>
+        <bpmn2:targetRef>decisioncomment</bpmn2:targetRef>
+      </bpmn2:dataOutputAssociation>
+      <bpmn2:dataOutputAssociation id="DataOutputAssociation_5">
+        <bpmn2:sourceRef>UserTask_1_lastnameOutput</bpmn2:sourceRef>
+        <bpmn2:targetRef>lastname</bpmn2:targetRef>
+      </bpmn2:dataOutputAssociation>
+      <bpmn2:dataOutputAssociation id="DataOutputAssociation_6">
+        <bpmn2:sourceRef>UserTask_1_usernameOutput</bpmn2:sourceRef>
+        <bpmn2:targetRef>username</bpmn2:targetRef>
+      </bpmn2:dataOutputAssociation>
+      <bpmn2:potentialOwner id="PotentialOwner_1">
+        <bpmn2:resourceAssignmentExpression id="ResourceAssignmentExpression_1">
+          <bpmn2:formalExpression id="FormalExpression_9">seaq</bpmn2:formalExpression>
+        </bpmn2:resourceAssignmentExpression>
+      </bpmn2:potentialOwner>
+      <bpmn2:potentialOwner id="PotentialOwner_2">
+        <bpmn2:resourceAssignmentExpression id="ResourceAssignmentExpression_2">
+          <bpmn2:formalExpression id="FormalExpression_10">diana</bpmn2:formalExpression>
+        </bpmn2:resourceAssignmentExpression>
+      </bpmn2:potentialOwner>
+      <bpmn2:potentialOwner id="PotentialOwner_3">
+        <bpmn2:resourceAssignmentExpression id="ResourceAssignmentExpression_3">
+          <bpmn2:formalExpression id="FormalExpression_11">bpmsAdmin</bpmn2:formalExpression>
+        </bpmn2:resourceAssignmentExpression>
+      </bpmn2:potentialOwner>
+    </bpmn2:userTask>
+    <bpmn2:exclusiveGateway id="ExclusiveGateway_1" name="Gateway" gatewayDirection="Diverging">
+      <bpmn2:incoming>UserTask_1-ExclusiveGateway_1</bpmn2:incoming>
+      <bpmn2:outgoing>ExclusiveGateway_1-ScriptTask_3</bpmn2:outgoing>
+      <bpmn2:outgoing>ExclusiveGateway_1-ScriptTask_4</bpmn2:outgoing>
+    </bpmn2:exclusiveGateway>
+    <bpmn2:scriptTask id="ScriptTask_3" name="Enviar Aprobado" scriptFormat="http://www.java.com/java">
+      <bpmn2:extensionElements>
+        <tns:metaData name="elementname">
+          <tns:metaValue><![CDATA[Enviar Aprobado]]></tns:metaValue>
+        </tns:metaData>
+      </bpmn2:extensionElements>
+      <bpmn2:incoming>ExclusiveGateway_1-ScriptTask_3</bpmn2:incoming>
+      <bpmn2:outgoing>SequenceFlow_1</bpmn2:outgoing>
+      <bpmn2:script>System.out.println(&quot;Inicio Aprobado&quot;);
+String targetURL = &quot;https://seaq.openshift.feedhenry.com/api/v2/ag-push/rest/sender&quot;;
+String applicationId = &quot;5435083b-010f-4cb6-8b2a-63631c2647c4&quot;;
+String masterSecret = &quot;a0da461e-0f57-40ec-a522-0d8d8a574db6&quot;;
+byte[] bytesBasicAuthData = Base64.encodeBase64(new String(applicationId + &quot;:&quot; + masterSecret).getBytes());
+String basicAuthData = new String(bytesBasicAuthData);
+String pushMessage = &quot;{\&quot;message\&quot;: {\&quot;alert\&quot;: \&quot;Solicitud 'SE-0&quot; + kcontext.getProcessInstance().getId() + &quot;' aprobada.\&quot;,\&quot;sound\&quot;: \&quot;default\&quot;}}&quot;;
+System.out.println(&quot;Auth: &quot;+basicAuthData);
+System.out.println(&quot;Mensaje a enviar: &quot;+pushMessage);
+
+HttpURLConnection connection = null;  
+  try {
+    //Create connection
+    URL url = new URL(targetURL);
+    connection = (HttpURLConnection)url.openConnection();
+    connection.setRequestMethod(&quot;POST&quot;);
+    connection.setRequestProperty(&quot;Content-Type&quot;, &quot;application/json&quot;);
+    connection.setRequestProperty(&quot;Accept&quot;, &quot;application/json&quot;);
+    connection.setRequestProperty(&quot;Authorization&quot;, &quot;Basic &quot; + basicAuthData);
+    
+    connection.setUseCaches(false);
+    connection.setDoOutput(true);
+
+    //Send request
+    DataOutputStream wr = new DataOutputStream(connection.getOutputStream());
+    wr.writeBytes(pushMessage);
+    wr.close();
+
+    //Get Response  
+    InputStream is = connection.getInputStream();
+    BufferedReader rd = new BufferedReader(new InputStreamReader(is));
+    StringBuilder response = new StringBuilder(); // or StringBuffer if not Java 5+ 
+    String line;
+    while((line = rd.readLine()) != null) {
+      response.append(line);
+      response.append('\r');
+    }
+    rd.close();
+    System.out.println(&quot;PUSH response: &quot; + response.toString());
+  } catch (Exception e) {
+    e.printStackTrace();
+    System.out.println(&quot;PUSH ERROR&quot;);
+  } finally {
+    if(connection != null) {
+      connection.disconnect(); 
+    }
+  }</bpmn2:script>
+    </bpmn2:scriptTask>
+    <bpmn2:scriptTask id="ScriptTask_4" name="Enviar Rechazado" scriptFormat="http://www.java.com/java">
+      <bpmn2:extensionElements>
+        <tns:metaData name="elementname">
+          <tns:metaValue><![CDATA[Enviar Rechazado]]></tns:metaValue>
+        </tns:metaData>
+      </bpmn2:extensionElements>
+      <bpmn2:incoming>ExclusiveGateway_1-ScriptTask_4</bpmn2:incoming>
+      <bpmn2:outgoing>SequenceFlow_2</bpmn2:outgoing>
+      <bpmn2:script>System.out.println(&quot;Inicio Rechazado&quot;);
+String targetURL = &quot;https://seaq.openshift.feedhenry.com/api/v2/ag-push/rest/sender&quot;;
+String applicationId = &quot;5435083b-010f-4cb6-8b2a-63631c2647c4&quot;;
+String masterSecret = &quot;a0da461e-0f57-40ec-a522-0d8d8a574db6&quot;;
+byte[] bytesBasicAuthData = Base64.encodeBase64(new String(applicationId + &quot;:&quot; + masterSecret).getBytes());
+String basicAuthData = new String(bytesBasicAuthData);
+String pushMessage = &quot;{\&quot;message\&quot;: {\&quot;alert\&quot;: \&quot;Solicitud 'SE-0&quot; + kcontext.getProcessInstance().getId() + &quot;' rechazada.\&quot;,\&quot;sound\&quot;: \&quot;default\&quot;}}&quot;;
+System.out.println(&quot;Auth: &quot;+basicAuthData);
+System.out.println(&quot;Mensaje a enviar: &quot;+pushMessage);
+
+HttpURLConnection connection = null;  
+  try {
+    //Create connection
+    URL url = new URL(targetURL);
+    connection = (HttpURLConnection)url.openConnection();
+    connection.setRequestMethod(&quot;POST&quot;);
+    connection.setRequestProperty(&quot;Content-Type&quot;, &quot;application/json&quot;);
+    connection.setRequestProperty(&quot;Accept&quot;, &quot;application/json&quot;);
+    connection.setRequestProperty(&quot;Authorization&quot;, &quot;Basic &quot; + basicAuthData);
+    
+    
+    connection.setUseCaches(false);
+    connection.setDoOutput(true);
+
+    //Send request
+    DataOutputStream wr = new DataOutputStream(connection.getOutputStream());
+    wr.writeBytes(pushMessage);
+    wr.close();
+
+    //Get Response  
+    InputStream is = connection.getInputStream();
+    BufferedReader rd = new BufferedReader(new InputStreamReader(is));
+    StringBuilder response = new StringBuilder(); // or StringBuffer if not Java 5+ 
+    String line;
+    while((line = rd.readLine()) != null) {
+      response.append(line);
+      response.append('\r');
+    }
+    rd.close();
+    System.out.println(&quot;PUSH response: &quot; + response.toString());
+  } catch (Exception e) {
+    e.printStackTrace();
+    System.out.println(&quot;PUSH ERROR&quot;);
+  } finally {
+    if(connection != null) {
+      connection.disconnect(); 
+    }
+  }</bpmn2:script>
+    </bpmn2:scriptTask>
+    <bpmn2:sequenceFlow id="StartEvent_1-ScriptTask_1" sourceRef="StartEvent_1" targetRef="ScriptTask_1"/>
+    <bpmn2:sequenceFlow id="ScriptTask_1-ScriptTask_2" sourceRef="ScriptTask_1" targetRef="ScriptTask_2"/>
+    <bpmn2:sequenceFlow id="ScriptTask_2-UserTask_1" sourceRef="ScriptTask_2" targetRef="UserTask_1"/>
+    <bpmn2:sequenceFlow id="UserTask_1-ExclusiveGateway_1" sourceRef="UserTask_1" targetRef="ExclusiveGateway_1"/>
+    <bpmn2:sequenceFlow id="ExclusiveGateway_1-ScriptTask_3" sourceRef="ExclusiveGateway_1" targetRef="ScriptTask_3">
+      <bpmn2:conditionExpression xsi:type="bpmn2:tFormalExpression" id="FormalExpression_12" language="http://www.java.com/java">return  KieFunctions.equalsTo(decision, &quot;APPROVED&quot;);</bpmn2:conditionExpression>
+    </bpmn2:sequenceFlow>
+    <bpmn2:sequenceFlow id="ExclusiveGateway_1-ScriptTask_4" tns:priority="1" sourceRef="ExclusiveGateway_1" targetRef="ScriptTask_4">
+      <bpmn2:conditionExpression xsi:type="bpmn2:tFormalExpression" id="FormalExpression_13" language="http://www.java.com/java">return  KieFunctions.equalsTo(decision, &quot;REJECTED&quot;);</bpmn2:conditionExpression>
+    </bpmn2:sequenceFlow>
+    <bpmn2:task id="Task_1" tns:taskName="Twitter" tns:displayName="Twitter" tns:icon="twitter.gif" name="TwitterOK">
+      <bpmn2:extensionElements>
+        <tns:metaData name="elementname">
+          <tns:metaValue><![CDATA[TwitterOK]]></tns:metaValue>
+        </tns:metaData>
+      </bpmn2:extensionElements>
+      <bpmn2:incoming>SequenceFlow_1</bpmn2:incoming>
+      <bpmn2:outgoing>SequenceFlow_10</bpmn2:outgoing>
+      <bpmn2:ioSpecification id="InputOutputSpecification_2">
+        <bpmn2:dataInput id="DataInput_1" itemSubjectRef="ItemDefinition_4" name="Message"/>
+        <bpmn2:inputSet id="_InputSet_2">
+          <bpmn2:dataInputRefs>DataInput_1</bpmn2:dataInputRefs>
+        </bpmn2:inputSet>
+        <bpmn2:outputSet id="OutputSet_2" name="Output Set 2"/>
+      </bpmn2:ioSpecification>
+      <bpmn2:dataInputAssociation id="_DataInputAssociation_2">
+        <bpmn2:targetRef>DataInput_1</bpmn2:targetRef>
+        <bpmn2:assignment id="Assignment_5">
+          <bpmn2:from xsi:type="bpmn2:tFormalExpression" id="FormalExpression_15">Hola @{lastname}</bpmn2:from>
+          <bpmn2:to xsi:type="bpmn2:tFormalExpression" id="FormalExpression_14">DataInput_1</bpmn2:to>
+        </bpmn2:assignment>
+      </bpmn2:dataInputAssociation>
+    </bpmn2:task>
+    <bpmn2:sequenceFlow id="SequenceFlow_1" tns:priority="1" sourceRef="ScriptTask_3" targetRef="Task_1"/>
+    <bpmn2:endEvent id="EndEvent_3" name="End Event 3">
+      <bpmn2:extensionElements>
+        <tns:metaData name="elementname">
+          <tns:metaValue><![CDATA[End Event 3]]></tns:metaValue>
+        </tns:metaData>
+      </bpmn2:extensionElements>
+      <bpmn2:incoming>SequenceFlow_10</bpmn2:incoming>
+    </bpmn2:endEvent>
+    <bpmn2:sequenceFlow id="SequenceFlow_10" tns:priority="1" sourceRef="Task_1" targetRef="EndEvent_3"/>
+    <bpmn2:endEvent id="EndEvent_5" name="End Event 5">
+      <bpmn2:extensionElements>
+        <tns:metaData name="elementname">
+          <tns:metaValue><![CDATA[End Event 5]]></tns:metaValue>
+        </tns:metaData>
+      </bpmn2:extensionElements>
+      <bpmn2:incoming>SequenceFlow_2</bpmn2:incoming>
+    </bpmn2:endEvent>
+    <bpmn2:sequenceFlow id="SequenceFlow_2" tns:priority="1" sourceRef="ScriptTask_4" targetRef="EndEvent_5"/>
+  </bpmn2:process>
+  <bpmndi:BPMNDiagram id="BPMNDiagram_1">
+    <bpmndi:BPMNPlane id="BPMNPlane_Process_1" bpmnElement="seaq.ProcesoSolicitud">
+      <bpmndi:BPMNShape id="BPMNShape_StartEvent_1" bpmnElement="StartEvent_1">
+        <dc:Bounds height="48.0" width="48.0" x="54.0" y="114.0"/>
+        <bpmndi:BPMNLabel id="BPMNLabel_1">
+          <dc:Bounds height="14.0" width="71.0" x="43.0" y="162.0"/>
+        </bpmndi:BPMNLabel>
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="BPMNShape_ScriptTask_1" bpmnElement="ScriptTask_1">
+        <dc:Bounds height="50.0" width="110.0" x="148.0" y="113.0"/>
+        <bpmndi:BPMNLabel id="BPMNLabel_2">
+          <dc:Bounds height="14.0" width="88.0" x="159.0" y="131.0"/>
+        </bpmndi:BPMNLabel>
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="BPMNShape_ScriptTask_2" bpmnElement="ScriptTask_2">
+        <dc:Bounds height="50.0" width="110.0" x="290.0" y="113.0"/>
+        <bpmndi:BPMNLabel id="BPMNLabel_3">
+          <dc:Bounds height="14.0" width="84.0" x="303.0" y="131.0"/>
+        </bpmndi:BPMNLabel>
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="BPMNShape_UserTask_1" bpmnElement="UserTask_1">
+        <dc:Bounds height="50.0" width="110.0" x="450.0" y="113.0"/>
+        <bpmndi:BPMNLabel id="BPMNLabel_4">
+          <dc:Bounds height="14.0" width="100.0" x="455.0" y="131.0"/>
+        </bpmndi:BPMNLabel>
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="BPMNShape_ExclusiveGateway_1" bpmnElement="ExclusiveGateway_1" isMarkerVisible="true">
+        <dc:Bounds height="48.0" width="48.0" x="620.0" y="114.0"/>
+        <bpmndi:BPMNLabel id="BPMNLabel_5">
+          <dc:Bounds height="14.0" width="47.0" x="620.0" y="162.0"/>
+        </bpmndi:BPMNLabel>
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="BPMNShape_ScriptTask_3" bpmnElement="ScriptTask_3">
+        <dc:Bounds height="50.0" width="110.0" x="730.0" y="17.0"/>
+        <bpmndi:BPMNLabel id="BPMNLabel_6">
+          <dc:Bounds height="14.0" width="89.0" x="740.0" y="35.0"/>
+        </bpmndi:BPMNLabel>
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="BPMNShape_ScriptTask_4" bpmnElement="ScriptTask_4">
+        <dc:Bounds height="50.0" width="110.0" x="719.0" y="161.0"/>
+        <bpmndi:BPMNLabel id="BPMNLabel_7">
+          <dc:Bounds height="14.0" width="99.0" x="724.0" y="179.0"/>
+        </bpmndi:BPMNLabel>
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="BPMNShape_Task_1" bpmnElement="Task_1">
+        <dc:Bounds height="50.0" width="110.0" x="890.0" y="17.0"/>
+        <bpmndi:BPMNLabel id="BPMNLabel_8">
+          <dc:Bounds height="14.0" width="52.0" x="919.0" y="35.0"/>
+        </bpmndi:BPMNLabel>
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="BPMNShape_EndEvent_3" bpmnElement="EndEvent_3">
+        <dc:Bounds height="36.0" width="36.0" x="1041.0" y="24.0"/>
+        <bpmndi:BPMNLabel id="BPMNLabel_9">
+          <dc:Bounds height="14.0" width="65.0" x="1027.0" y="60.0"/>
+        </bpmndi:BPMNLabel>
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="BPMNShape_EndEvent_5" bpmnElement="EndEvent_5">
+        <dc:Bounds height="36.0" width="36.0" x="870.0" y="168.0"/>
+        <bpmndi:BPMNLabel id="BPMNLabel_11">
+          <dc:Bounds height="14.0" width="65.0" x="856.0" y="204.0"/>
+        </bpmndi:BPMNLabel>
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNEdge id="BPMNEdge_SequenceFlow_1" bpmnElement="StartEvent_1-ScriptTask_1" sourceElement="BPMNShape_StartEvent_1" targetElement="BPMNShape_ScriptTask_1">
+        <di:waypoint xsi:type="dc:Point" x="102.0" y="138.0"/>
+        <di:waypoint xsi:type="dc:Point" x="125.0" y="138.0"/>
+        <di:waypoint xsi:type="dc:Point" x="148.0" y="138.0"/>
+        <bpmndi:BPMNLabel id="BPMNLabel_12"/>
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="BPMNEdge_SequenceFlow_2" bpmnElement="ScriptTask_1-ScriptTask_2" sourceElement="BPMNShape_ScriptTask_1" targetElement="BPMNShape_ScriptTask_2">
+        <di:waypoint xsi:type="dc:Point" x="258.0" y="138.0"/>
+        <di:waypoint xsi:type="dc:Point" x="274.0" y="138.0"/>
+        <di:waypoint xsi:type="dc:Point" x="290.0" y="138.0"/>
+        <bpmndi:BPMNLabel id="BPMNLabel_13"/>
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="BPMNEdge_SequenceFlow_3" bpmnElement="ScriptTask_2-UserTask_1" sourceElement="BPMNShape_ScriptTask_2" targetElement="BPMNShape_UserTask_1">
+        <di:waypoint xsi:type="dc:Point" x="400.0" y="138.0"/>
+        <di:waypoint xsi:type="dc:Point" x="425.0" y="138.0"/>
+        <di:waypoint xsi:type="dc:Point" x="450.0" y="138.0"/>
+        <bpmndi:BPMNLabel id="BPMNLabel_14"/>
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="BPMNEdge_SequenceFlow_4" bpmnElement="UserTask_1-ExclusiveGateway_1" sourceElement="BPMNShape_UserTask_1" targetElement="BPMNShape_ExclusiveGateway_1">
+        <di:waypoint xsi:type="dc:Point" x="560.0" y="138.0"/>
+        <di:waypoint xsi:type="dc:Point" x="590.0" y="138.0"/>
+        <di:waypoint xsi:type="dc:Point" x="620.0" y="138.0"/>
+        <bpmndi:BPMNLabel id="BPMNLabel_15"/>
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="BPMNEdge_SequenceFlow_5" bpmnElement="ExclusiveGateway_1-ScriptTask_3" sourceElement="BPMNShape_ExclusiveGateway_1" targetElement="BPMNShape_ScriptTask_3">
+        <di:waypoint xsi:type="dc:Point" x="668.0" y="138.0"/>
+        <di:waypoint xsi:type="dc:Point" x="690.0" y="138.0"/>
+        <di:waypoint xsi:type="dc:Point" x="690.0" y="42.0"/>
+        <di:waypoint xsi:type="dc:Point" x="730.0" y="42.0"/>
+        <bpmndi:BPMNLabel id="BPMNLabel_16"/>
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="BPMNEdge_SequenceFlow_6" bpmnElement="ExclusiveGateway_1-ScriptTask_4" sourceElement="BPMNShape_ExclusiveGateway_1" targetElement="BPMNShape_ScriptTask_4">
+        <di:waypoint xsi:type="dc:Point" x="644.0" y="162.0"/>
+        <di:waypoint xsi:type="dc:Point" x="644.0" y="186.0"/>
+        <di:waypoint xsi:type="dc:Point" x="719.0" y="186.0"/>
+        <bpmndi:BPMNLabel id="BPMNLabel_17"/>
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="BPMNEdge_SequenceFlow_7" bpmnElement="SequenceFlow_1" sourceElement="BPMNShape_ScriptTask_3" targetElement="BPMNShape_Task_1">
+        <di:waypoint xsi:type="dc:Point" x="840.0" y="42.0"/>
+        <di:waypoint xsi:type="dc:Point" x="865.0" y="42.0"/>
+        <di:waypoint xsi:type="dc:Point" x="890.0" y="42.0"/>
+        <bpmndi:BPMNLabel id="BPMNLabel_18"/>
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="BPMNEdge_SequenceFlow_16" bpmnElement="SequenceFlow_10" sourceElement="BPMNShape_Task_1" targetElement="BPMNShape_EndEvent_3">
+        <di:waypoint xsi:type="dc:Point" x="1000.0" y="42.0"/>
+        <di:waypoint xsi:type="dc:Point" x="1020.0" y="42.0"/>
+        <di:waypoint xsi:type="dc:Point" x="1041.0" y="42.0"/>
+        <bpmndi:BPMNLabel id="BPMNLabel_19"/>
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="BPMNEdge_SequenceFlow_8" bpmnElement="SequenceFlow_2" sourceElement="BPMNShape_ScriptTask_4" targetElement="BPMNShape_EndEvent_5">
+        <di:waypoint xsi:type="dc:Point" x="829.0" y="186.0"/>
+        <di:waypoint xsi:type="dc:Point" x="860.0" y="186.0"/>
+        <di:waypoint xsi:type="dc:Point" x="860.0" y="186.0"/>
+        <di:waypoint xsi:type="dc:Point" x="870.0" y="186.0"/>
+        <bpmndi:BPMNLabel/>
+      </bpmndi:BPMNEdge>
+    </bpmndi:BPMNPlane>
+  </bpmndi:BPMNDiagram>
+</bpmn2:definitions>
